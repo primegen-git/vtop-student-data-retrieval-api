@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import re
 
 
 def extract_csrf_from_open_page(html_content: str):
@@ -43,3 +44,32 @@ def extract_image_recaptcha(html_content: str):
     print("does not find image tag")
 
     return False, None
+
+
+def extract_error_message(html_content: str):
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    span_tag = soup.find("span", attrs={"role": "alert"})
+    if span_tag:
+        return span_tag.get_text(strip=True)
+    return None
+
+
+def extract_csrf_from_login_page(html_content: str):
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    scripts = soup.find_all("scripts")
+
+    csrf_value = None
+
+    for script in scripts:
+        if (
+            script.string
+        ):  # ensure that we only take scripts with javascript embeeded in it and not <script scr="">
+            match = re.search(r'var\s+csrf_value\s*=*"([^"]+)', script.string)
+
+            if match:
+                csrf_value = match.group(1)
+                break
+
+    return csrf_value
