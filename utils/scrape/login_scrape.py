@@ -1,3 +1,4 @@
+from inspect import walktree
 from bs4 import BeautifulSoup
 import re
 
@@ -47,29 +48,34 @@ def extract_image_recaptcha(html_content: str):
 
 
 def extract_error_message(html_content: str):
-    soup = BeautifulSoup(html_content, "html.parser")
+    try:
+        soup = BeautifulSoup(html_content, "html.parser")
 
-    span_tag = soup.find("span", attrs={"role": "alert"})
-    if span_tag:
-        return span_tag.get_text(strip=True)
-    return None
+        span_tag = soup.find("span", attrs={"role": "alert"})
+        if span_tag:
+            return span_tag.get_text(strip=True)
+        return None
+    except Exception as e:
+        print(f"error in extracting login-error-msg : {str(e)}")
 
 
-def extract_csrf_from_login_page(html_content: str):
-    soup = BeautifulSoup(html_content, "html.parser")
+def extract_csrf_from_content_page(html_content: str):
+    try:
+        soup = BeautifulSoup(html_content, "html.parser")
+        form_tag = soup.find("form", attrs={"id": "logoutForm1"})
 
-    scripts = soup.find_all("scripts")
+        if not form_tag:
+            print("Form with id 'logoutForm1' not found.")
+            return None
 
-    csrf_value = None
+        csrf_tag = form_tag.find("input", attrs={"name": "_csrf"})
+        if not csrf_tag:
+            print("CSRF input tag not found inside the form.")
+            return None
 
-    for script in scripts:
-        if (
-            script.string
-        ):  # ensure that we only take scripts with javascript embeeded in it and not <script scr="">
-            match = re.search(r'var\s+csrf_value\s*=*"([^"]+)', script.string)
+        csrf_value = csrf_tag.get("value")
+        return csrf_value
 
-            if match:
-                csrf_value = match.group(1)
-                break
-
-    return csrf_value
+    except Exception as e:
+        print(f"Some error in extracting login CSRF: {str(e)}")
+        return None
