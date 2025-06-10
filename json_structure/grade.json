@@ -1,0 +1,17 @@
+"semester": {
+    "course_code": {
+        "course_name": "",
+        "course_type": "",
+        "grade_total": "",
+        "grade": "",
+        "class_strength": "",
+        "grading_strength": "",
+        "mean": "",
+        "sd": "",
+        "range_of_grade": {
+            "s": "range_of_grade(either is string or other format",
+            "a":
+        }
+    }
+}
+}

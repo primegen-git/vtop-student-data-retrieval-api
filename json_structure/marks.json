@@ -1,0 +1,15 @@
+{
+    "semester": {
+        "course_code": {
+            "course_name": "",
+            "mark_title": {
+                "cat-1": {
+                    "max_marks": 15,
+                    "max_weightage": 15,
+                    "scored_marks": 14,
+                    "weightage_marks": 14,
+                }
+            }
+        }
+    },
+}

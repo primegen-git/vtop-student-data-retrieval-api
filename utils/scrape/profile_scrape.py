@@ -38,9 +38,8 @@ def extract_profile(html_content: str):
 
 
 if __name__ == "__main__":
-    file_location = (
-        "/home/ujjawal/personal_project/vtop_production/html_content/profile.html"
-    )
+    file_location = "html_content/profile.html"
+
     with open(file_location, "r") as f:
         html_content = f.read()
 
