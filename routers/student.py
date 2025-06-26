@@ -76,7 +76,9 @@ BASE_URL = "https://vtopcc.vit.ac.in"
 @router.get("/create_session")
 async def create_session():
     session_id = str(uuid4())
-    client = httpx.AsyncClient(verify=False, follow_redirects=True)
+    client = httpx.AsyncClient(
+        verify=False, follow_redirects=True
+    )  # each client object has its own cookie jar
     await store_client(session_id, client)
     return session_id
 
