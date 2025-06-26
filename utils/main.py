@@ -1,5 +1,4 @@
 import json
-import aiofiles
 from email.utils import formatdate
 from fastapi import HTTPException
 import time
@@ -53,7 +52,6 @@ class VtopScraper:
             self.db.refresh(student_model)
 
             self.logger.info("student model is created successfully")
-            print("successfully saved to database")
 
         except Exception as e:
             self.db.rollback()
@@ -61,17 +59,16 @@ class VtopScraper:
 
     async def scrape_all(self):
         self.profile = await self.scrape_profile()
-        print("profile scraping completed")
+
         self.semester = await self.scrape_semester()
-        print("semester scraping completed")
+
         self.timetable = await self.scrape_timetable()
-        print("timetable scraping completed")
+
         self.marks = await self.scrape_marks()
-        print("marks scraping completed")
+
         self.grade_history = await self.scrape_grader_history()
-        print("grade_history scraping completed")
+
         self.attendance = await self.scrape_attendance()
-        print("attendance scraping completed")
 
         await self.save_to_database()
 
@@ -268,8 +265,6 @@ class VtopScraper:
                     timetable_response = await self.client.post(
                         url=TIMETABLE_URL, data=timetable_payload
                     )
-
-                    print(timetable_response)
 
                     try:
                         timetable_response.raise_for_status()
