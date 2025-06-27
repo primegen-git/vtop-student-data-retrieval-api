@@ -14,14 +14,12 @@ from utils.scrape import (
 from sqlalchemy.orm import Session
 import models
 import logging
+from validator import delete_client, delete_csrf_token
 
 
 class VtopScraper:
-    def __init__(
-        self, client: AsyncClient, session_id: str, csrf_token, reg_no: str, db: Session
-    ):
+    def __init__(self, client: AsyncClient, reg_no: str, csrf_token, db: Session):
         self.client = client
-        self.session_id = session_id
         self.csrf_token = csrf_token
         self.reg_no = reg_no
         self.profile = None
@@ -31,34 +29,61 @@ class VtopScraper:
         self.grade_history = None
         self.attendance = None
         self.db = db
+        self.name = None
 
         self.logger = logging.getLogger(__name__)
 
     async def save_to_database(self):
         try:
-            self.logger.info("saving to database started")
-            student_model = models.Student(
-                session_id=self.session_id,
-                profile=json.dumps(self.profile),
-                semester=json.dumps(self.semester),
-                timetable=json.dumps(self.timetable),
-                marks=json.dumps(self.marks),
-                grade_history=json.dumps(self.grade_history),
-                attendance=json.dumps(self.attendance),
+            self.logger.info("checking if the user exist in the database")
+
+            # Check if student with reg_no exists
+            existing_student = (
+                self.db.query(models.Student)
+                .filter(models.Student.reg_no == self.reg_no)
+                .first()
             )
 
-            self.db.add(student_model)
-            self.db.commit()
-            self.db.refresh(student_model)
+            if existing_student:
+                self.logger.info("student exists, updating the record")
+                existing_student.profile = json.dumps(self.profile)
+                existing_student.semester = json.dumps(self.semester)
+                existing_student.timetable = json.dumps(self.timetable)
+                existing_student.marks = json.dumps(self.marks)
+                existing_student.grade_history = json.dumps(self.grade_history)
+                existing_student.attendance = json.dumps(self.attendance)
 
-            self.logger.info("student model is created successfully")
+                self.db.commit()
+                self.db.refresh(existing_student)
+                self.logger.info("student record updated successfully")
+            else:
+                self.logger.info("student does not exist, creating new record")
+                student_model = models.Student(
+                    reg_no=self.reg_no,
+                    profile=json.dumps(self.profile),
+                    semester=json.dumps(self.semester),
+                    timetable=json.dumps(self.timetable),
+                    marks=json.dumps(self.marks),
+                    grade_history=json.dumps(self.grade_history),
+                    attendance=json.dumps(self.attendance),
+                )
+
+                self.db.add(student_model)
+                self.db.commit()
+                self.db.refresh(student_model)
+
+                self.logger.info("student model is created successfully")
 
         except Exception as e:
+            self.logger.error(f"Error occurred: {e}")
             self.db.rollback()
-            self.logger.error(f"error in database saving : {str(e)}", exc_info=True)
+            raise
 
     async def scrape_all(self):
         self.profile = await self.scrape_profile()
+
+        if self.profile:
+            self.name = self.profile.get("name")
 
         self.semester = await self.scrape_semester()
 
@@ -72,27 +97,9 @@ class VtopScraper:
 
         await self.save_to_database()
 
-        # async with aiofiles.open("test.txt", "w", encoding="utf-8") as file:
-        #
-        #     await file.write(json.dumps(self.profile))
-        #     await file.write("\n")
-        #
-        #     await file.write(json.dumps(self.semester))
-        #     await file.write("\n")
-        #
-        #     await file.write(json.dumps(self.timetable))
-        #     await file.write("\n")
-        #
-        #     await file.write(json.dumps(self.marks))
-        #     await file.write("\n")
-        #
-        #     await file.write(json.dumps(self.grade_history))
-        #     await file.write("\n")
-        #
-        #     await file.write(json.dumps(self.attendance))
-        #     await file.write("\n")
-        #
-        self.logger.info("scraping completed")
+        await self.clean_up()
+
+        return self.name
 
     async def scrape_profile(self):
         try:
@@ -137,6 +144,7 @@ class VtopScraper:
 
         except Exception as e:
             self.logger.error(f"error in scraping profile : {str(e)}", exc_info=True)
+            return None
 
     async def scrape_attendance(self):
         try:
@@ -192,6 +200,7 @@ class VtopScraper:
 
         except Exception as e:
             self.logger.error("error in scraping attendance", exc_info=True)
+            return None
 
     async def scrape_semester(self):
         try:
@@ -239,6 +248,7 @@ class VtopScraper:
 
         except Exception as e:
             self.logger.error(f"error in scraping semester : {str(e)}")
+            return None
 
     async def scrape_timetable(self):
         try:
@@ -292,6 +302,7 @@ class VtopScraper:
 
         except Exception as e:
             self.logger.error(f"error in scraping timetable {str(e)}", exc_info=True)
+            return None
 
     async def scrape_marks(self):
         try:
@@ -341,6 +352,7 @@ class VtopScraper:
 
         except Exception as e:
             self.logger.error(f"Error in scraping {str(e)}", exc_info=True)
+            return None
 
     async def scrape_grader_history(self):
         try:
@@ -387,3 +399,11 @@ class VtopScraper:
             self.logger.error(
                 f"error in scraping grade history {str(e)}", exc_info=True
             )
+            return None
+
+    async def clean_up(self):
+        try:
+            await delete_client(self.reg_no)
+            await delete_csrf_token(self.reg_no)
+        except Exception as e:
+            self.logger.error("error in clean up")

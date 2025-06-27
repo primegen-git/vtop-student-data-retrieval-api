@@ -5,7 +5,7 @@ from database import Base
 class Student(Base):
     __tablename__ = "students"
 
-    session_id = Column(String, primary_key=True)
+    reg_no = Column(String, primary_key=True)
     profile = Column(String)
     semester = Column(String)
     timetable = Column(String)
