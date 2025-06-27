@@ -14,7 +14,7 @@ from utils.scrape import (
 from sqlalchemy.orm import Session
 import models
 import logging
-from validator import delete_client, delete_csrf_token
+from .validator import delete_session, delete_csrf_token
 
 
 class VtopScraper:
@@ -403,7 +403,7 @@ class VtopScraper:
 
     async def clean_up(self):
         try:
-            await delete_client(self.reg_no)
+            await delete_session(self.reg_no)
             await delete_csrf_token(self.reg_no)
         except Exception as e:
-            self.logger.error("error in clean up")
+            self.logger.error(f"error in clean up {e}")
