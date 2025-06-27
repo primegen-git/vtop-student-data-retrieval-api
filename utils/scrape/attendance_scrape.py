@@ -1,6 +1,5 @@
 import logging
 from bs4 import BeautifulSoup, Tag
-import json
 from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -103,3 +102,5 @@ if __name__ == "__main__":
 
     with open(input_html_file, "r", encoding="utf-8") as file:
         html_content = file.read()
+
+    print(extract_attendance(html_content))
