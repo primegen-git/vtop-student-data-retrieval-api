@@ -7,10 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from utils.validator import validate_session
 
-logger = logging.getLogger(__name__)
-
-from database import get_db
 from models import Student
+from database import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -158,4 +158,38 @@ async def get_timetable(
         return await fetch_records_per_semester(reg_no, sem_id, db, "timetable")
     except Exception as e:
         logger.error(f"Error in get_timetable: {e}", exc_info=True)
+        return ResponseModel(success=False, data=None)
+
+
+@router.get("/courses", response_model=ResponseModel)
+async def get_courses(
+    reg_no: str, db: Session = Depends(get_db)
+):
+    """
+    Returns a JSON of all course keys and their names for the given reg_no.
+    Use marks like process, but from that resp just puck id n name
+    """
+    await validate_session(reg_no)
+    try:
+        stmt = select(Student.marks).where(Student.reg_no == reg_no)
+        result = db.execute(stmt)
+        marks_data = result.scalar_one_or_none()
+        if not marks_data:
+            logger.error("Marks data does not exist")
+            return ResponseModel(success=False, data=None)
+
+        marks = json.loads(marks_data)
+        course_mappings = {}
+        for courses in marks.values():
+            for course_code, course_info in courses.items():
+                course_mappings[course_code] = course_info.get("course_name", "Unknown Course")
+
+        if not course_mappings:
+            logger.warning("No courses found")
+            return ResponseModel(success=False, data=None)
+        logger.info("Courses data successfully fetched from database")
+        return ResponseModel(success=True, data=course_mappings)
+
+    except Exception as e:
+        logger.error(f"Error in get_courses: {e}", exc_info=True)
         return ResponseModel(success=False, data=None)
