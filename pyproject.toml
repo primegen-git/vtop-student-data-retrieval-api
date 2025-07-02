@@ -1,0 +1,6 @@
+[project]
+name="Api for vtop data"
+version="0.1.0"
+description="Fastapi applications for vtop data"
+requires-python="3.13.5"
+dependencies=[]
