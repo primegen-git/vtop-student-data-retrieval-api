@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from utils.validator import validate_session
 
 from models import Student
 from database import get_db
@@ -25,7 +24,6 @@ async def fetch_all_records(reg_no: str, db: Session, query: str) -> ResponseMod
     return the record based on the query provided
     query : [ "profile", "semester", "grade_history"]
     """
-    await validate_session(reg_no)
     data = None
     try:
         if query == "profile":
@@ -59,7 +57,6 @@ async def fetch_records_per_semester(
     """
     return the student record semester wise if not provided return records for all semester
     """
-    await validate_session(reg_no)
     response = None
     data = None
     try:
@@ -162,14 +159,11 @@ async def get_timetable(
 
 
 @router.get("/courses", response_model=ResponseModel)
-async def get_courses(
-    reg_no: str, db: Session = Depends(get_db)
-):
+async def get_courses(reg_no: str, db: Session = Depends(get_db)):
     """
     Returns a JSON of all course keys and their names for the given reg_no.
     Use marks like process, but from that resp just puck id n name
     """
-    await validate_session(reg_no)
     try:
         stmt = select(Student.marks).where(Student.reg_no == reg_no)
         result = db.execute(stmt)
@@ -182,7 +176,9 @@ async def get_courses(
         course_mappings = {}
         for courses in marks.values():
             for course_code, course_info in courses.items():
-                course_mappings[course_code] = course_info.get("course_name", "Unknown Course")
+                course_mappings[course_code] = course_info.get(
+                    "course_name", "Unknown Course"
+                )
 
         if not course_mappings:
             logger.warning("No courses found")
