@@ -82,10 +82,10 @@ BASE_URL = "https://vtopcc.vit.ac.in"
 async def create_session(reg_no: str):
     try:
         timeout = httpx.Timeout(
-            # connect=10.0,    # Connection timeout
+            connect=10.0,    # Connection timeout
             read=30.0,  # Read timeout (increase this)
-            # write=10.0,      # Write timeout
-            # pool=10.0        # Pool timeout
+            write=10.0,      # Write timeout
+            pool=10.0        # Pool timeout
         )
         client = httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout)
         await store_client(reg_no, client)

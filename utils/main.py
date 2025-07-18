@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 import models
 import logging
 from .validator import delete_session, delete_csrf_token
+from utils.semester_pre_process import semester_pre_process
 
 
 class VtopScraper:
@@ -244,7 +245,7 @@ class VtopScraper:
                 raise HTTPException(500, detail="semester extraction failed")
 
             self.logger.info("successfully extracted semester data")
-            return semester_data
+            return semester_pre_process(semester_data, reg_no=self.reg_no)
 
         except Exception as e:
             self.logger.error(f"error in scraping semester : {str(e)}")
@@ -337,9 +338,9 @@ class VtopScraper:
 
                     marks_data = marks_scrape.extract_marks(marks_response.text)
 
-                    if not marks_data:
-                        self.logger.error("error in scraping marks", exc_info=True)
-                        raise HTTPException(500, detail="error in scraping marks")
+                    # if not marks_data:
+                    #     self.logger.error("error in scraping marks", exc_info=True)
+                    #     raise HTTPException(500, detail="error in scraping marks")
 
                     marks_dict[sem_id] = marks_data
 
