@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 import logging
 from pydantic import BaseModel
 import httpx
@@ -17,6 +18,11 @@ from utils.validator import (
 )
 
 from database import get_db
+
+import os
+import json
+from dotenv import load_dotenv
+load_dotenv()
 
 router = APIRouter()
 
@@ -46,6 +52,13 @@ class LogoutResponseModel(BaseModel):
 class ScrapeResponseModel(BaseModel):
     success: bool
     name: str | None
+
+
+class AskModel(BaseModel):
+    name: str
+    reg_no: str
+    query: str
+    dummy: bool = False
 
 
 async def scrape_user_data(reg_no: str):
@@ -226,15 +239,27 @@ async def login(login_request: LoginModel):
 
 
 @router.get("/start-scraping", response_model=ScrapeResponseModel)
-async def scrape(reg_no: str):
+async def scrape(reg_no: str, force_scrape: bool = True, db: Session = Depends(get_db)):
     try:
         await validate_session(reg_no)
+
+        # Check existing user in DB if not forcing scrape
+        if not force_scrape:
+            existing_user = db.query(models.Student).filter_by(reg_no=reg_no).first()
+            if existing_user:
+                name = json.loads(existing_user.profile)['name']
+                logger.info(
+                    "User already exists in DB. Skipping scrape for reg_no: %s as requested.", reg_no)
+                return ScrapeResponseModel(success=True, name=name)
+
+        # Proceed with scraping
         name = await scrape_user_data(reg_no)
         logger.info("Scraping completed for reg_no: %s", reg_no)
         return ScrapeResponseModel(success=True, name=name)
+
     except Exception as e:
         logger.error(f"Error in scrape endpoint: {e}", exc_info=True)
-        raise HTTPException(500, detail="error in scraping")
+        raise HTTPException(500, detail="Error in scraping")
 
 
 @router.get("/logout", response_model=ScrapeResponseModel)
@@ -247,4 +272,60 @@ async def logout(reg_no: str, db: Session = Depends(get_db)):
         return LogoutResponseModel(success=True)
     except Exception as e:
         logger.error(f"Error in logout endpoint: {e}", exc_info=True)
-        raise HTTPException(500, detail="errro in logout")
+        raise HTTPException(500, detail="Error in logout")
+
+
+@router.post("/ask")
+async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
+    try:
+        c_reg_no = ask_model.reg_no
+        c_name = ask_model.name
+        c_dummy = ask_model.dummy
+        c_query = ask_model.query
+
+        if not c_reg_no or not c_name or not c_query:
+            logger.error("Invalid input data for ask endpoint")
+            raise HTTPException(400, "invalid input data")
+
+        target_url = os.getenv("LLM_SERVER_HOST", None)
+        if not target_url:
+            logger.error("LLM_SERVER_HOST environment variable is not set")
+            raise HTTPException(500, "LLM server host not configured")
+
+        if c_dummy:
+            target_url = f"{target_url}/dummy_invoke"
+            payload = {}
+        else:
+            target_url = f"{target_url}/invoke"
+            payload = {
+                "name": c_name,
+                "reg_no": c_reg_no,
+                "query": c_query,
+            }
+
+        logger.info(f"Sending request to LLM server for user {c_reg_no}")
+        # Get the streaming response from the LLM server
+
+        async def stream_from_llm():
+            async with httpx.AsyncClient(timeout=None) as client:
+                try:
+                    async with client.stream(
+                        "POST",
+                        target_url,
+                        json=payload,
+                        headers={"Content-Type": "application/json"}
+                    ) as resp:
+                        async for line in resp.aiter_lines():
+                            yield line + "\n"
+
+                except Exception as e:
+                    logger.error(f"Error while contacting LLM server: {e}", exc_info=True)
+                    yield json.dumps({
+                        "type": "error",
+                        "data": "Internal server error while contacting LLM."
+                    }) + "\n"
+        return StreamingResponse(stream_from_llm(), media_type="application/json")
+
+    except Exception as e:
+        logger.error(f"Error in ask endpoint: {e}", exc_info=True)
+        raise HTTPException(500, detail="Error in asking llm")
