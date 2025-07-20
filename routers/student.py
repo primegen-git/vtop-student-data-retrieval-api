@@ -22,6 +22,7 @@ from database import get_db
 import os
 import json
 from dotenv import load_dotenv
+
 load_dotenv()
 
 router = APIRouter()
@@ -95,10 +96,10 @@ BASE_URL = "https://vtopcc.vit.ac.in"
 async def create_session(reg_no: str):
     try:
         timeout = httpx.Timeout(
-            connect=10.0,    # Connection timeout
+            connect=10.0,  # Connection timeout
             read=30.0,  # Read timeout (increase this)
-            write=10.0,      # Write timeout
-            pool=10.0        # Pool timeout
+            write=10.0,  # Write timeout
+            pool=10.0,  # Pool timeout
         )
         client = httpx.AsyncClient(verify=False, follow_redirects=True, timeout=timeout)
         await store_client(reg_no, client)
@@ -247,9 +248,11 @@ async def scrape(reg_no: str, force_scrape: bool = True, db: Session = Depends(g
         if not force_scrape:
             existing_user = db.query(models.Student).filter_by(reg_no=reg_no).first()
             if existing_user:
-                name = json.loads(existing_user.profile)['name']
+                name = json.loads(existing_user.profile)["name"]
                 logger.info(
-                    "User already exists in DB. Skipping scrape for reg_no: %s as requested.", reg_no)
+                    "User already exists in DB. Skipping scrape for reg_no: %s as requested.",
+                    reg_no,
+                )
                 return ScrapeResponseModel(success=True, name=name)
 
         # Proceed with scraping
@@ -313,17 +316,22 @@ async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
                         "POST",
                         target_url,
                         json=payload,
-                        headers={"Content-Type": "application/json"}
+                        headers={"Content-Type": "application/json"},
                     ) as resp:
                         async for line in resp.aiter_lines():
                             yield line + "\n"
 
                 except Exception as e:
-                    logger.error(f"Error while contacting LLM server: {e}", exc_info=True)
-                    yield json.dumps({
-                        "type": "error",
-                        "data": "Internal server error while contacting LLM."
-                    }) + "\n"
+                    logger.error(
+                        f"Error while contacting LLM server: {e}", exc_info=True
+                    )
+                    yield json.dumps(
+                        {
+                            "type": "error",
+                            "data": "Internal server error while contacting LLM.",
+                        }
+                    ) + "\n"
+
         return StreamingResponse(stream_from_llm(), media_type="application/json")
 
     except Exception as e:

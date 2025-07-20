@@ -165,27 +165,71 @@ async def get_courses(reg_no: str, db: Session = Depends(get_db)):
     Use marks like process, but from that resp just puck id n name
     """
     try:
-        stmt = select(Student.marks).where(Student.reg_no == reg_no)
+        stmt = select(Student.timetable).where(Student.reg_no == reg_no)
         result = db.execute(stmt)
-        marks_data = result.scalar_one_or_none()
-        if not marks_data:
-            logger.error("Marks data does not exist")
-            return ResponseModel(success=False, data=None)
+        timetable_data = result.scalar_one_or_none()
+        if not timetable_data:
+            logger.error("timetable does not exist.")
+            return ResponseModel(
+                success=False,
+                data={"msg": "timetable does not exist. load data again."},
+            )
 
-        marks = json.loads(marks_data)
+        data = json.loads(timetable_data)
+
         course_mappings = {}
-        for courses in marks.values():
-            for course_code, course_info in courses.items():
-                course_mappings[course_code] = course_info.get(
-                    "course_name", "Unknown Course"
-                )
 
-        if not course_mappings:
-            logger.warning("No courses found")
-            return ResponseModel(success=False, data=None)
+        for _, sem_data in data.items():
+            for _, timetable in sem_data.items():
+                for period in timetable:
+                    c_code = period.get("course_code", "")
+                    c_name = period.get("course_name", "")
+
+                    if not c_code or not c_name:
+                        continue
+
+                    else:
+                        if c_code not in course_mappings:
+                            course_mappings[c_code] = c_name
+
         logger.info("Courses data successfully fetched from database")
         return ResponseModel(success=True, data=course_mappings)
 
     except Exception as e:
         logger.error(f"Error in get_courses: {e}", exc_info=True)
         return ResponseModel(success=False, data=None)
+
+
+# NOTE: changes to timetable because marks for the current semester does not exist in the begining.
+
+# @router.get("/courses", response_model=ResponseModel)
+# async def get_courses(reg_no: str, db: Session = Depends(get_db)):
+#     """
+#     Returns a JSON of all course keys and their names for the given reg_no.
+#     Use marks like process, but from that resp just puck id n name
+#     """
+#     try:
+#         stmt = select(Student.marks).where(Student.reg_no == reg_no)
+#         result = db.execute(stmt)
+#         marks_data = result.scalar_one_or_none()
+#         if not marks_data:
+#             logger.error("Marks data does not exist")
+#             return ResponseModel(success=False, data=None)
+#
+#         marks = json.loads(marks_data)
+#         course_mappings = {}
+#         for courses in marks.values():
+#             for course_code, course_info in courses.items():
+#                 course_mappings[course_code] = course_info.get(
+#                     "course_name", "Unknown Course"
+#                 )
+#
+#         if not course_mappings:
+#             logger.warning("No courses found")
+#             return ResponseModel(success=False, data=None)
+#         logger.info("Courses data successfully fetched from database")
+#         return ResponseModel(success=True, data=course_mappings)
+#
+#     except Exception as e:
+#         logger.error(f"Error in get_courses: {e}", exc_info=True)
+#         return ResponseModel(success=False, data=None)
