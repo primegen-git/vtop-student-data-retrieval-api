@@ -290,10 +290,17 @@ async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
             logger.error("Invalid input data for ask endpoint")
             raise HTTPException(400, "invalid input data")
 
-        target_url = os.getenv("LLM_SERVER_HOST", None)
-        if not target_url:
-            logger.error("LLM_SERVER_HOST environment variable is not set")
-            raise HTTPException(500, "LLM server host not configured")
+        llm_server_ip = os.getenv("LLM_SERVER_IP", None)
+        if not llm_server_ip:
+            logger.error("LLM_SERVER_IP environment variable is not set")
+            raise HTTPException(500, "LLM server IP not configured")
+
+        llm_server_port = os.getenv("LLM_SERVER_PORT", None)
+        if not llm_server_port:
+            logger.error("LLM_SERVER_PORT environment variable is not set")
+            raise HTTPException(500, "LLM server port not configured")
+
+        target_url = f"{llm_server_ip}:{llm_server_port}"
 
         if c_dummy:
             target_url = f"{target_url}/dummy_invoke"
