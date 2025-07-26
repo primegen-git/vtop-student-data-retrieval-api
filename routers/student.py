@@ -290,6 +290,8 @@ async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
             logger.error("Invalid input data for ask endpoint")
             raise HTTPException(400, "invalid input data")
 
+        await validate_session(ask_model.reg_no)
+
         llm_server_ip = os.getenv("LLM_SERVER_IP", None)
         if not llm_server_ip:
             logger.error("LLM_SERVER_IP environment variable is not set")
@@ -335,12 +337,17 @@ async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
                     yield json.dumps(
                         {
                             "type": "error",
-                            "data": "Internal server error while contacting LLM.",
+                            "data": "Failed to get response for your query from LLM.",
                         }
                     ) + "\n"
 
         return StreamingResponse(stream_from_llm(), media_type="application/json")
 
+    # return as it is the validation error
+    except HTTPException as http_exc:
+        logger.error(f"HTTP error in ask endpoint: {http_exc.detail}", exc_info=True)
+        raise http_exc
+    
     except Exception as e:
         logger.error(f"Error in ask endpoint: {e}", exc_info=True)
         raise HTTPException(500, detail="Error in asking llm")
