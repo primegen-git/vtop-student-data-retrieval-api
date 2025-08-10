@@ -22,43 +22,43 @@ These diagrams illustrate the API flow, required parameters.
 
 ### 1. Login & Session Setup
 
-![Login Setup](assets/login_setup.excalidraw.md)
+![Login Setup](assets/login_setup.excalidraw.svg)
 
 ---
 
 ### 2. Student Profile Scraping
 
-![Student Profile](assets/student_grade.excalidraw.md)
+![Student Profile](assets/profile.excalidraw.svg)
 
 ---
 
 ### 3. Attendance Scraping
 
-![Attendance](assets/attendance.excalidraw.md)
+![Attendance](assets/attendance.excalidraw.svg)
 
 ---
 
 ### 4. Grade History & CGPA
 
-![Grade History](assets/grade_history.excalidraw.md)
+![Grade History](assets/grade_history.excalidraw.svg)
 
 ---
 
 ### 5. Semester Data
 
-![Semester](assets/semester.excalidraw.md)
+![Semester](assets/semester.excalidraw.svg)
 
 ---
 
 ### 6. Marks Scraping
 
-![Student Marks](assets/student_marks.excalidraw.md)
+![Student Marks](assets/student_marks.excalidraw.svg)
 
 ---
 
 ### 7. Timetable Scraping
 
-![Timetable](assets/time_table.excalidraw.md)
+![Timetable](assets/time_table.excalidraw.svg)
 
 ---
 
