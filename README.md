@@ -15,6 +15,53 @@ This project provides a FastAPI-based backend for scraping, storing, and serving
 
 ---
 
+## Architecture & Flow
+
+Below are visual diagrams representing the workflow and endpoints of the project.
+These diagrams illustrate the API flow, required parameters.
+
+### 1. Login & Session Setup
+
+![Login Setup](assets/login_setup.excalidraw.png)
+
+---
+
+### 2. Student Profile Scraping
+
+![Student Profile](assets/student_grade.excalidraw.png)
+
+---
+
+### 3. Attendance Scraping
+
+![Attendance](assets/attendance.excalidraw.png)
+
+---
+
+### 4. Grade History & CGPA
+
+![Grade History](assets/grade_history.excalidraw.png)
+
+---
+
+### 5. Semester Data
+
+![Semester](assets/semester.excalidraw.png)
+
+---
+
+### 6. Marks Scraping
+
+![Student Marks](assets/student_marks.excalidraw.png)
+
+---
+
+### 7. Timetable Scraping
+
+![Timetable](assets/time_table.excalidraw.png)
+
+---
+
 ## Project Structure
 
 ```
@@ -56,39 +103,6 @@ This project provides a FastAPI-based backend for scraping, storing, and serving
 
 6. **Session Cleanup**:
    - Expired sessions are cleaned up every 10 minutes to free resources.
-
----
-
-## Setup Instructions
-
-### 1. Clone the Repository
-
-```sh
-git clone https://github.com/yourusername/vtop-student-api.git
-cd vtop-student-api
-```
-
-### 2. Install Dependencies
-
-It is recommended to use a virtual environment.
-
-```sh
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. Database Initialization
-
-The database is automatically created and migrated on first run.
-
-### 4. Run the Application
-
-```sh
-uvicorn main:app --reload
-```
-
-The API will be available at `http://localhost:8000`.
 
 ---
 
@@ -138,6 +152,7 @@ The API will be available at `http://localhost:8000`.
 > **Tip:**
 > The `sem_id` parameter for marks, attendance, and timetable endpoints can be obtained from the `/llm/semesters` endpoint.
 > If you do not provide a `sem_id`, the API will return data for all semesters.
+
 ---
 
 ## Development Notes
