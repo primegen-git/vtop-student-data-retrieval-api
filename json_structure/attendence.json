@@ -1,10 +1,10 @@
 {
-    "semester": {
-        "course_code": {
-            "course_name": "",
-            "total_class": "",
-            "attended_class": "",
-            "attendence_percentage": "",
-        }
-    }
+	"semester": {
+		"course_code": {
+			"course_name": "",
+			"total": "",
+			"attended_class": "",
+			"attendence_percentage": "",
+		}
+	}
 }

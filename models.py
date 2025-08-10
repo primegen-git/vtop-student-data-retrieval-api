@@ -12,3 +12,4 @@ class Student(Base):
     marks = Column(String)
     grade_history = Column(String)
     attendance = Column(String)
+    cgpa_details = Column(String)

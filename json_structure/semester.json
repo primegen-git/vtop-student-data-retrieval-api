@@ -1,3 +1,10 @@
 {
-    "semester_code": "semester_name"
+	"semester_code": {
+		"semester_name": "Fall Semester 2023-24",
+		"detail": {
+			"study_year": "This is the 2nd year since admission ({adm_year}).",
+			"semester_in_year": "This semester is the 1st semester of that academic year.",
+			"cumulative_semester": "This is the 3rd semester overall since starting the degree.",
+		}
+	}
 }

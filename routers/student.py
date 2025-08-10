@@ -248,7 +248,7 @@ async def scrape(reg_no: str, force_scrape: bool = True, db: Session = Depends(g
         if not force_scrape:
             existing_user = db.query(models.Student).filter_by(reg_no=reg_no).first()
             if existing_user:
-                name = json.loads(existing_user.profile)["name"]
+                name = json.loads(str(existing_user.profile))["name"]
                 logger.info(
                     "User already exists in DB. Skipping scrape for reg_no: %s as requested.",
                     reg_no,

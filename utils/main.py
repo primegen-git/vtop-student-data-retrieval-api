@@ -10,6 +10,7 @@ from utils.scrape import (
     marks_scrape,
     grade_history_scrape,
     attendance_scrape,
+    cgpa_details_scrape,
 )
 from sqlalchemy.orm import Session
 import models
@@ -28,6 +29,7 @@ class VtopScraper:
         self.timetable = None
         self.marks = None
         self.grade_history = None
+        self.cgpa_details = None
         self.attendance = None
         self.db = db
         self.name = None
@@ -53,6 +55,7 @@ class VtopScraper:
                 existing_student.marks = json.dumps(self.marks)
                 existing_student.grade_history = json.dumps(self.grade_history)
                 existing_student.attendance = json.dumps(self.attendance)
+                existing_student.cgpa_details = json.dumps(self.cgpa_details)
 
                 self.db.commit()
                 self.db.refresh(existing_student)
@@ -67,6 +70,7 @@ class VtopScraper:
                     marks=json.dumps(self.marks),
                     grade_history=json.dumps(self.grade_history),
                     attendance=json.dumps(self.attendance),
+                    cgpa_details=json.dumps(self.cgpa_details),
                 )
 
                 self.db.add(student_model)
@@ -92,7 +96,9 @@ class VtopScraper:
 
         self.marks = await self.scrape_marks()
 
-        self.grade_history = await self.scrape_grader_history()
+        self.grade_history, self.cgpa_details = (
+            await self.scrape_grader_history_and_cgpa_details()
+        )
 
         self.attendance = await self.scrape_attendance()
 
@@ -355,7 +361,7 @@ class VtopScraper:
             self.logger.error(f"Error in scraping {str(e)}", exc_info=True)
             return None
 
-    async def scrape_grader_history(self):
+    async def scrape_grader_history_and_cgpa_details(self):
         try:
             self.logger.info("started scraping grade_history")
             GRADE_HISTORY_URL = "https://vtopcc.vit.ac.in/vtop/examinations/examGradeView/StudentGradeHistory"
@@ -390,17 +396,28 @@ class VtopScraper:
             )
 
             if not grade_history_data:
-                self.logger.error("No profile data retrived", exc_info=True)
-                raise HTTPException(500, detail="error in scraping profile data")
+                self.logger.error("No grade history data retrived", exc_info=True)
+                raise HTTPException(500, detail="error in scraping grade history data")
 
-            self.logger.info("successfully get profile data")
-            return grade_history_data
+            self.logger.info("successfully get grade history data")
+
+            cgpa_details = cgpa_details_scrape.extract_cgpa_details(
+                grade_history_response.text
+            )
+
+            if not cgpa_details:
+                self.logger.error("No cgpa details retrived", exc_info=True)
+                raise HTTPException(500, detail="error in scraping cgap details")
+
+            self.logger.info("successfully cgpa details")
+
+            return (grade_history_data, cgpa_details)
 
         except Exception as e:
             self.logger.error(
                 f"error in scraping grade history {str(e)}", exc_info=True
             )
-            return None
+            return (None, None)
 
     async def clean_up(self):
         try:

@@ -41,6 +41,12 @@ async def fetch_all_records(reg_no: str, db: Session, query: str) -> ResponseMod
             stmt = select(Student.grade_history).where(Student.reg_no == reg_no)
             result = db.execute(stmt)
             data = result.scalar_one_or_none()
+
+        elif query == "cgpa_details":
+            logger.info("fetching cgpa_details")
+            stmt = select(Student.cgpa_details).where(Student.reg_no == reg_no)
+            result = db.execute(stmt)
+            data = result.scalar_one_or_none()
     except Exception as e:
         logger.error(f"error in getting {query} : {str(e)}", exc_info=True)
 
@@ -123,6 +129,15 @@ async def get_grade_history(reg_no, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error in get_grade_history: {e}", exc_info=True)
         return ResponseModel(success=False, data=None)  # changed: added error return
+
+
+@router.get("/cgpa_details", response_model=ResponseModel)
+async def get_cgpa_details(reg_no, db: Session = Depends(get_db)):
+    try:
+        return await fetch_all_records(reg_no, db, "cgpa_details")
+    except Exception as e:
+        logger.error(f"Error in get_cgpa_details: {e}", exc_info=True)
+        return ResponseModel(success=False, data=None)
 
 
 @router.get("/marks", response_model=ResponseModel)
