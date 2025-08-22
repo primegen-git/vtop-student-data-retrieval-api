@@ -290,7 +290,7 @@ async def ask(ask_model: AskModel, db: Session = Depends(get_db)):
             logger.error("Invalid input data for ask endpoint")
             raise HTTPException(400, "invalid input data")
 
-        await validate_session(ask_model.reg_no)
+        # await validate_session(ask_model.reg_no)
 
         llm_server_ip = os.getenv("LLM_SERVER_IP", None)
         if not llm_server_ip:
