@@ -3,6 +3,7 @@ from email.utils import formatdate
 from fastapi import HTTPException
 import time
 from httpx import AsyncClient
+from sqlalchemy import Column
 from utils.scrape import (
     profile_scrape,
     semester_scrape,
@@ -10,7 +11,7 @@ from utils.scrape import (
     marks_scrape,
     grade_history_scrape,
     attendance_scrape,
-    cgpa_details_scrape,
+    gpa_per_semester,
 )
 from sqlalchemy.orm import Session
 import models
@@ -29,7 +30,9 @@ class VtopScraper:
         self.timetable = None
         self.marks = None
         self.grade_history = None
+        self.credits_info = None
         self.cgpa_details = None
+        self.grades_count = None
         self.attendance = None
         self.db = db
         self.name = None
@@ -49,13 +52,15 @@ class VtopScraper:
 
             if existing_student:
                 self.logger.info("student exists, updating the record")
-                existing_student.profile = json.dumps(self.profile)
-                existing_student.semester = json.dumps(self.semester)
-                existing_student.timetable = json.dumps(self.timetable)
-                existing_student.marks = json.dumps(self.marks)
-                existing_student.grade_history = json.dumps(self.grade_history)
-                existing_student.attendance = json.dumps(self.attendance)
-                existing_student.cgpa_details = json.dumps(self.cgpa_details)
+                existing_student.profile = Column(json.dumps(self.profile))
+                existing_student.semester = Column(json.dumps(self.semester))
+                existing_student.timetable = Column(json.dumps(self.timetable))
+                existing_student.marks = Column(json.dumps(self.marks))
+                existing_student.grade_history = Column(json.dumps(self.grade_history))
+                existing_student.attendance = Column(json.dumps(self.attendance))
+                existing_student.credits_info = Column(json.dumps(self.credits_info))
+                existing_student.grades_count = Column(json.dumps(self.grades_count))
+                existing_student.cgpa_details = Column(json.dumps(self.cgpa_details))
 
                 self.db.commit()
                 self.db.refresh(existing_student)
@@ -70,6 +75,8 @@ class VtopScraper:
                     marks=json.dumps(self.marks),
                     grade_history=json.dumps(self.grade_history),
                     attendance=json.dumps(self.attendance),
+                    credits_info=json.dumps(self.credits_info),
+                    grades_count=json.dumps(self.grades_count),
                     cgpa_details=json.dumps(self.cgpa_details),
                 )
 
@@ -94,11 +101,22 @@ class VtopScraper:
 
         self.timetable = await self.scrape_timetable()
 
+        self.cgpa_details = await self.scrape_gpa_per_semester()
+
         self.marks = await self.scrape_marks()
 
-        self.grade_history, self.cgpa_details = (
-            await self.scrape_grader_history_and_cgpa_details()
-        )
+        (
+            self.grade_history,
+            self.credits_info,
+            cgpa,
+            self.grades_count,
+        ) = await self.scrape_grader_history_and_cgpa_and_grade_count()
+
+        if self.cgpa_details:
+            if cgpa:
+                self.cgpa_details["cgpa"] = cgpa
+            else:
+                self.cgpa_details["cpga"] = 0
 
         self.attendance = await self.scrape_attendance()
 
@@ -289,7 +307,7 @@ class VtopScraper:
                     except Exception as e:
                         self.logger.error(f"error in response {e}", exc_info=True)
 
-                    timetable_data = timetable_scrape.extract_timetable(
+                    timetable_data = timetable_scrape.extract_timetable_info(
                         timetable_response.text
                     )
 
@@ -361,7 +379,66 @@ class VtopScraper:
             self.logger.error(f"Error in scraping {str(e)}", exc_info=True)
             return None
 
-    async def scrape_grader_history_and_cgpa_details(self):
+    async def scrape_gpa_per_semester(self):
+
+        gpa_dict = {}
+
+        try:
+            self.logger.info("started scraping gpa per semester")
+
+            GRADE_URL = "https://vtopcc.vit.ac.in/vtop/examinations/examGradeView/doStudentGradeView"
+
+            if self.semester:
+                for sem_id in self.semester.keys():
+                    gpa_payload = {
+                        "authorizedID": self.reg_no,
+                        "semesterSubId": sem_id,
+                        "_csrf": self.csrf_token,
+                    }
+
+                    self.logger.info(
+                        f"request send to url : {GRADE_URL} with payload : {gpa_payload}"
+                    )
+
+                    gpa_response = await self.client.post(
+                        url=GRADE_URL, data=gpa_payload
+                    )
+
+                    try:
+                        gpa_response.raise_for_status()
+                        self.logger.info("request completed successfully")
+                    except Exception as e:
+                        self.logger.error(f"error in response {e}", exc_info=True)
+
+                    gpa = gpa_per_semester.extract_gpa(gpa_response.text)
+
+                    if not gpa:
+                        self.logger.error(
+                            "error in parsing gpa(either gpa has not been uploaded or something else)",
+                            exc_info=True,
+                        )
+                        gpa = 0
+
+                    gpa_dict[sem_id] = gpa
+
+                    self.logger.info("scrape gpa for semester")
+
+                self.logger.info("complete gpa parsing")
+                return gpa_dict
+
+        except Exception as e:
+            self.logger.error(
+                f"error in scraping grades per semester {str(e)}", exc_info=True
+            )
+            if self.semester:
+                for sem_id in self.semester.keys():
+                    if sem_id in gpa_dict:
+                        continue
+                    else:
+                        gpa_dict[sem_id] = 0
+                return gpa_dict
+
+    async def scrape_grader_history_and_cgpa_and_grade_count(self):
         try:
             self.logger.info("started scraping grade_history")
             GRADE_HISTORY_URL = "https://vtopcc.vit.ac.in/vtop/examinations/examGradeView/StudentGradeHistory"
@@ -391,8 +468,8 @@ class VtopScraper:
 
             self.logger.info("request completed successfully")
 
-            grade_history_data = grade_history_scrape.extract_grade_history(
-                grade_history_response.text
+            grade_history_data, credits_info, cgpa, grades_count = (
+                grade_history_scrape.extract_grade_history(grade_history_response.text)
             )
 
             if not grade_history_data:
@@ -401,23 +478,15 @@ class VtopScraper:
 
             self.logger.info("successfully get grade history data")
 
-            cgpa_details = cgpa_details_scrape.extract_cgpa_details(
-                grade_history_response.text
-            )
-
-            if not cgpa_details:
-                self.logger.error("No cgpa details retrived", exc_info=True)
-                raise HTTPException(500, detail="error in scraping cgap details")
-
             self.logger.info("successfully cgpa details")
 
-            return (grade_history_data, cgpa_details)
+            return (grade_history_data, credits_info, cgpa, grades_count)
 
         except Exception as e:
             self.logger.error(
                 f"error in scraping grade history {str(e)}", exc_info=True
             )
-            return (None, None)
+            return (None, None, None, None)
 
     async def clean_up(self):
         try:

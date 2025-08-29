@@ -1,4 +1,12 @@
-"monday": {
-    "course_name": "",
-    "course_code": ""
-}
+"monday": [
+	{
+		"course_name": "",
+		"course_code": "",
+		"details": {
+			"credit": "",
+			"faculty-name": "",
+			"slot": "",
+			"venue": "",
+		},
+	}
+]

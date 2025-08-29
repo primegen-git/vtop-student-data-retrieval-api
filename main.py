@@ -12,8 +12,11 @@ from utils.validator import cleanup_sessions
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
-    # handlers=[logging.FileHandler("app.log"), logging.StreamHandler(sys.stdout)], # for console output also
-    handlers=[logging.FileHandler("app.log")],
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler(sys.stdout),
+    ],  # for console output also
+    # handlers=[logging.FileHandler("app.log")],
 )
 
 logger = logging.getLogger(__name__)

@@ -65,7 +65,7 @@ def _extract_attendance_data_from_table(
                             "course_name": course_name,
                             "total_class": total_class,
                             "attended_class": attended_class,
-                            "attendence_percentage": attendance_percentage,
+                            "attendance_percentage": attendance_percentage,
                         }
                 except IndexError as e:
                     logger.warning(f"IndexError in attendance row: {e}", exc_info=True)
@@ -98,7 +98,7 @@ def extract_attendance(html_content: str) -> Dict[str, Dict[str, str]]:
 
 if __name__ == "__main__":
 
-    input_html_file = "html_content/attendence.html"
+    input_html_file = "html_content/attendance.html"
 
     with open(input_html_file, "r", encoding="utf-8") as file:
         html_content = file.read()
