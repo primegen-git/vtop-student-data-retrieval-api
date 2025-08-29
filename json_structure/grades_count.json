@@ -1,10 +1,10 @@
-{
-	"s-grades": 22,
-	"a-grades": 21,
-	"b-grades": 14,
-	"c-grades": 2,
-	"d-grades": 0,
-	"e-grades": 0,
-	"f-grades": 0,
-	"n-grades": 0
+"grades_count": {
+	"s-grades": ,
+	"a-grades": ,
+	"b-grades": ,
+	"c-grades": ,
+	"d-grades": ,
+	"e-grades": ,
+	"f-grades": ,
+	"n-grades":
 }

@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from models import Student
@@ -16,7 +16,7 @@ router = APIRouter()
 
 class ResponseModel(BaseModel):
     success: bool
-    data: dict | None
+    data: dict | None | float
 
 
 async def fetch_all_records(reg_no: str, db: Session, query: str) -> ResponseModel:
@@ -31,22 +31,31 @@ async def fetch_all_records(reg_no: str, db: Session, query: str) -> ResponseMod
             stmt = select(Student.profile).where(Student.reg_no == reg_no)
             result = db.execute(stmt)
             data = result.scalar_one_or_none()
+
         elif query == "semester":
             logger.info("fetching semester")
             stmt = select(Student.semester).where(Student.reg_no == reg_no)
             result = db.execute(stmt)
             data = result.scalar_one_or_none()
+
         elif query == "grade_history":
             logger.info("fetching grade_history")
             stmt = select(Student.grade_history).where(Student.reg_no == reg_no)
             result = db.execute(stmt)
             data = result.scalar_one_or_none()
 
-        elif query == "cgpa_details":
-            logger.info("fetching cgpa_details")
-            stmt = select(Student.cgpa_details).where(Student.reg_no == reg_no)
+        elif query == "credits_info":
+            logger.info("fetching credits_info")
+            stmt = select(Student.credits_info).where(Student.reg_no == reg_no)
             result = db.execute(stmt)
             data = result.scalar_one_or_none()
+
+        elif query == "grades_count":
+            logger.info("fetching grades_count")
+            stmt = select(Student.grades_count).where(Student.reg_no == reg_no)
+            result = db.execute(stmt)
+            data = result.scalar_one_or_none()
+
     except Exception as e:
         logger.error(f"error in getting {query} : {str(e)}", exc_info=True)
 
@@ -71,6 +80,13 @@ async def fetch_records_per_semester(
             data = db.execute(
                 select(Student.marks).where(Student.reg_no == reg_no)
             ).scalar_one_or_none()
+
+        elif query == "cgpa_details":
+            logger.info("fetching cgpa_details from database")
+            data = db.execute(
+                select(Student.cgpa_details).where(Student.reg_no == reg_no)
+            ).scalar_one_or_none()
+
         elif query == "timetable":
             logger.info("fetching timetable from database")
             data = db.execute(
@@ -131,23 +147,32 @@ async def get_grade_history(reg_no, db: Session = Depends(get_db)):
         return ResponseModel(success=False, data=None)  # changed: added error return
 
 
-@router.get("/cgpa_details", response_model=ResponseModel)
-async def get_cgpa_details(reg_no, db: Session = Depends(get_db)):
+@router.get("/grades_count", response_model=ResponseModel)
+async def get_grades_count(reg_no, db: Session = Depends(get_db)):
     try:
-        return await fetch_all_records(reg_no, db, "cgpa_details")
+        return await fetch_all_records(reg_no, db, "grades_count")
     except Exception as e:
-        logger.error(f"Error in get_cgpa_details: {e}", exc_info=True)
+        logger.error(f"Error in get_grades_count: {e}", exc_info=True)
         return ResponseModel(success=False, data=None)
 
 
-@router.get("/marks", response_model=ResponseModel)
-async def get_marks(
+@router.get("/credits_info", response_model=ResponseModel)
+async def get_credits_info(reg_no, db: Session = Depends(get_db)):
+    try:
+        return await fetch_all_records(reg_no, db, "credits_info")
+    except Exception as e:
+        logger.error(f"Error in get_credits_info: {e}", exc_info=True)
+        return ResponseModel(success=False, data=None)
+
+
+@router.get("/cgpa_details", response_model=ResponseModel)
+async def get_cgpa_details(
     reg_no: str, sem_id: Optional[str] = None, db: Session = Depends(get_db)
 ):
     try:
-        return await fetch_records_per_semester(reg_no, sem_id, db, "marks")
+        return await fetch_records_per_semester(reg_no, sem_id, db, "cgpa_details")
     except Exception as e:
-        logger.error(f"Error in get_marks: {e}", exc_info=True)
+        logger.error(f"Error in cgpa_details: {e}", exc_info=True)
         return ResponseModel(success=False, data=None)  # changed: added error return
 
 
