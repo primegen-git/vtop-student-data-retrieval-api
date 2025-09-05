@@ -74,8 +74,7 @@ These diagrams illustrate the API flow, required parameters.
 ├── streamlit_app.py       # Streamlit UI for interacting with the application
 ├── utils/                 # Utility modules (session, scraping, validation)
 │   └── scrape/            # HTML scraping logic for each VTOP page
-├── html_content/          # Sample HTML files for development/testing
-├── vtop_data.db           # SQLite database file
+├── json_structure         # contains response model for different endpoints.
 ```
 
 ---
@@ -92,7 +91,7 @@ These diagrams illustrate the API flow, required parameters.
    - On successful login, a session is established for subsequent scraping.
 
 3. **Scraping**:
-   - The backend scrapes various VTOP pages (profile, attendance, marks, timetable, grade history) using BeautifulSoup.
+   - The backend scrapes various VTOP pages (profile, attendance, marks, timetable, grade history, cgpa details, credit info etc...) using BeautifulSoup.
    - Each type of data has a dedicated scraping module under `utils/scrape/`.
 
 4. **Data Storage**:
