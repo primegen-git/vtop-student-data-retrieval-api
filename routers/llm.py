@@ -176,6 +176,17 @@ async def get_cgpa_details(
         return ResponseModel(success=False, data=None)  # changed: added error return
 
 
+@router.get("/marks", response_model=ResponseModel)
+async def get_marks(
+    reg_no: str, sem_id: Optional[str] = None, db: Session = Depends(get_db)
+):
+    try:
+        return await fetch_records_per_semester(reg_no, sem_id, db, "marks")
+    except Exception as e:
+        logger.error(f"Error in marks: {e}", exc_info=True)
+        return ResponseModel(success=False, data=None)
+
+
 @router.get("/attendance", response_model=ResponseModel)
 async def get_attendance(
     reg_no: str, sem_id: Optional[str] = None, db: Session = Depends(get_db)

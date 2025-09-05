@@ -71,16 +71,17 @@ These diagrams illustrate the API flow, required parameters.
 ├── models.py              # SQLAlchemy ORM models
 ├── requirements.txt       # Python dependencies
 ├── routers/               # FastAPI routers (student, llm)
+├── streamlit_app.py       # Streamlit UI for interacting with the application
 ├── utils/                 # Utility modules (session, scraping, validation)
 │   └── scrape/            # HTML scraping logic for each VTOP page
 ├── html_content/          # Sample HTML files for development/testing
 ├── vtop_data.db           # SQLite database file
-└── app.log                # Application log file
 ```
 
 ---
 
 ## How It Works
+
 
 1. **Session Creation**:
    - A session is created for each student using their registration number.
@@ -155,16 +156,27 @@ These diagrams illustrate the API flow, required parameters.
 
 ---
 
-## Development Notes
+## Setting up and Running the Streamlit Application
 
-- **HTML Parsing**:
-  All scraping logic is in `utils/scrape/` and uses BeautifulSoup for robust parsing.
-- **Session Security**:
-  Sessions and CSRF tokens are managed in-memory and cleaned up periodically.
-- **Database**:
-  Uses SQLite for simplicity; can be swapped for PostgreSQL/MySQL by changing `DATABASE_URL` in `database.py`.
-- **Logging**:
-  Logs are written to both `app.log` and stdout for debugging.
+To set up and run the Streamlit application:
+
+1. **Create a Virtual Environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+
+2. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Application**:
+   ```bash
+   streamlit run streamlit_app.py
+   ```
+   The application will be accessible at `http://localhost:8501`.
+
 
 ---
 
@@ -178,11 +190,6 @@ These diagrams illustrate the API flow, required parameters.
 
 ---
 
-## License
-
-This project is licensed under the MIT License.
-
----
 
 ## Acknowledgements
 
