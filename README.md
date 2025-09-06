@@ -1,4 +1,4 @@
-# VTOP Student Data Management API
+# VTOP Student Data Retrieval API
 
 This project provides a FastAPI-based backend for scraping, storing, and serving student data from the VIT VTOP portal. It is designed to automate the retrieval of student information such as profile, attendance, marks, timetable, and grade history, and make it accessible via RESTful API endpoints.
 
